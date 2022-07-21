@@ -16,5 +16,6 @@ config/autoplaylist.txt
 config/autoplaylist_removed.txt
 config/whitelist.txt
 config/blacklist.txt
+bilibili_download/*
 
 docker-compose.yml

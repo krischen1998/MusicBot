@@ -87,7 +87,9 @@ class Config:
         self.delete_nowplaying = config.getboolean(
             "Chat", "DeleteNowPlaying", fallback=ConfigDefaults.delete_nowplaying
         )
-
+        self.bilibili_quality = config.getint(
+            "MusicBot", "BilibiliQuality", fallback=ConfigDefaults.bilibili_quality
+        )
         self.default_volume = config.getfloat(
             "MusicBot", "DefaultVolume", fallback=ConfigDefaults.default_volume
         )
@@ -485,6 +487,7 @@ class ConfigDefaults:
     nowplaying_channels = set()
     delete_nowplaying = True
 
+    bilibili_quality = 16
     default_volume = 0.15
     skips_required = 4
     skip_ratio_required = 0.5

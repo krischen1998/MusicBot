@@ -11,10 +11,11 @@ from urllib.error import URLError
 # With this in mind, lets stick to the fork until it gets a dev
 from yt_dlp.utils import ExtractorError, DownloadError, UnsupportedError
 
+from . import bilibili
 from .utils import get_header
 from .constructs import Serializable
 from .lib.event_emitter import EventEmitter
-from .entry import URLPlaylistEntry, StreamPlaylistEntry
+from .entry import BilibiliPlaylistEntry, URLPlaylistEntry, StreamPlaylistEntry
 from .exceptions import ExtractionError, WrongEntryTypeError, InvalidDataError
 
 log = logging.getLogger(__name__)
@@ -55,6 +56,24 @@ class Playlist(EventEmitter, Serializable):
         entry = self.entries.popleft()
         self.entries.rotate(index)
         return entry
+
+    async def add_bilibili_entry(self, bvid, page, title, duration, **meta):
+        """
+            Validates and adds a bilibili vid to be played. This does not start the download of the song.
+            Returns the entry & the position it is in the queue.
+            :param vid: The bvid or aid of the Bilibili video to be played
+            :param meta: Any additional metadata to add to the playlist entry.
+        """
+        entry = BilibiliPlaylistEntry(
+            self,
+            bvid,
+            page,
+            title,
+            duration,
+            **meta
+        )
+        self._add_entry(entry)
+        return entry, len(self.entries)
 
     async def add_entry(self, song_url, *, head, **meta):
         """

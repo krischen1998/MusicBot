@@ -21,11 +21,21 @@ class MusicbotException(Exception):
 class CommandError(MusicbotException):
     pass
 
+class BilibiliError(MusicbotException):
+    pass
 
 # Something went wrong during the processing of a song/ytdl stuff
 class ExtractionError(MusicbotException):
     pass
+class HTTPError(MusicbotException):
+    @property
+    def message(self):
+        return "Error happened while sending HTTP requests.\nMessage: " + self._message
 
+class DownloadError(MusicbotException):
+    @property
+    def message(self):
+        return "Error happened while downloading the file.\nMessage: " + self._message
 
 # Something is wrong about data
 class InvalidDataError(MusicbotException):

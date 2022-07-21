@@ -26,7 +26,9 @@ from discord.enums import ChannelType
 
 from . import exceptions
 from . import downloader
+from . import bilibili
 
+from .entry import StreamPlaylistEntry, BilibiliPlaylistEntry, get_entry_title
 from .playlist import Playlist
 from .player import MusicPlayer
 from .entry import StreamPlaylistEntry
@@ -1358,7 +1360,7 @@ class MusicBot(discord.Client):
         e.set_author(
             name=self.user.name,
             url="https://github.com/Just-Some-Bots/MusicBot",
-            icon_url=self.user.avatar_url,
+            icon_url="https://i.imgur.com/AfFp7pu.png",
         )
         return e
 
@@ -1731,6 +1733,10 @@ class MusicBot(discord.Client):
             song_url = " ".join([song_url, *leftover_args])
         leftover_args = None  # prevent some crazy shit happening down the line
 
+        bilibili_vid = None
+        if song_url.lower().startswith('av') or song_url.lower().startswith('bv'):
+            bilibili_vid = song_url
+
         # Make sure forward slashes work properly in search queries
         linksRegex = "((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)"
         pattern = re.compile(linksRegex)
@@ -1746,6 +1752,17 @@ class MusicBot(discord.Client):
             if len(groups) > 0
             else song_url
         )
+
+        if matchUrl and bilibili_vid is None:
+            bilibili_vid_regex = r'\/((BV\w+)|(av\d+))'
+            match_bilibili_vid = re.search(bilibili_vid_regex, song_url, flags=re.I)
+            bilibili_vid = match_bilibili_vid.group(1) if match_bilibili_vid else None
+        # Correcting case
+        if bilibili_vid is not None:
+            if bilibili_vid[0:2] == 'bv':
+                bilibili_vid = 'BV' + bilibili_vid[2:]
+            if bilibili_vid[0:2] == 'AV':
+                bilibili_vid = 'av' + bilibili_vid[2:]
 
         if self.config._spotify:
             if "open.spotify.com" in song_url:
@@ -1854,6 +1871,20 @@ class MusicBot(discord.Client):
                             "You either provided an invalid URI, or there was a problem.",
                         )
                     )
+
+        if bilibili_vid:
+            page_match = re.search(r'\?.*(p=(\d+))', song_url)
+            page = None
+            if page_match:
+                page = page_match.group(2)
+
+            # Add all pages to for multi-parts videos
+            data = await bilibili.get_video_metadata(bilibili_vid)
+
+            entry, position = await player.playlist.add_bilibili_entry(data['bvid'], page, data['title'], data['duration'], channel=channel, author=author)
+            reply_text = self.str.get('cmd-play-song-reply', "Enqueued `%s` to be played. Position in queue: %s")
+            reply_text %= (entry, position)
+            return Response(reply_text)
 
         async def get_info(song_url):
             info = await self.downloader.extract_info(
